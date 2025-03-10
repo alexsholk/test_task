@@ -1,0 +1,43 @@
+services:
+  mysql:
+    image: mysql:9.2
+    env_file:
+      - .env
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+    ports:
+      - '33060:3306'
+    networks:
+      - app-network
+
+  php:
+    build: './docker/php'
+    volumes:
+      - ./app:/var/www/app
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:1.27
+    volumes:
+      - ./docker/nginx/templates:/etc/nginx/templates:ro
+      - ./app/web:/var/www/app/web:ro
+    depends_on:
+      - php
+    ports:
+      - '8000:80'
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
